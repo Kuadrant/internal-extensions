@@ -1,0 +1,33 @@
+apiVersion: extensions.kuadrant.io/v1alpha1
+kind: PipelinePolicy
+metadata:
+  name: my-pipeline
+  namespace: kuadrant
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: HTTPRoute
+    name: toystore
+  actionMethods:
+    - name: assess-threat
+      url: "grpc://threat-assessment-service.security.svc.cluster.local:8080"
+      service: "threat.v1.ThreatAssessmentService"
+      method: "AssessRequest"
+      messageTemplate: "threat.v1.ThreatRequest{uri: request.path, source_ip: source.address}"
+  request:
+    - type: allow
+      intention: 'request.url_path != "/blocked"'
+    - type: grpc_method
+      predicate: '"x-assess-threat" in request.headers'
+      method: assess-threat
+      var: threatResponse
+      intention: "threatResponse.threat_level < 5"
+  response:
+    - type: add_headers
+      predicate: '"x-assess-threat" in request.headers'
+      headersToAdd: '[["x-threat-assessed", "true"]]'
+    - type: add_headers
+      predicate: '!("x-assess-threat" in request.headers)'
+      headersToAdd: '[["x-threat-assessed", "false"]]'
+    - type: add_headers
+      headersToAdd: '[["x-threat-threshold", "5"]]'
