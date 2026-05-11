@@ -31,12 +31,27 @@ The PipelinePolicy spec contains:
 - `request[]` — ordered request-phase actions (type, predicate, intention, method, var)
 - `response[]` — ordered response-phase actions (type, predicate, headersToAdd, responseCode)
 
+## Project Structure
+
+- `main.go` — entry point: scheme registration, builder, controller start
+- `api/v1alpha1/` — CRD types, deepcopy, scheme registration (group: `extensions.kuadrant.io`)
+- `internal/controller/` — generic reconciler that iterates spec arrays and maps to SDK calls
+- `config/crd/bases/` — generated CRD YAML (`make manifests`)
+- `config/rbac/` — ClusterRole and ClusterRoleBinding for the operator service account
+- `examples/` — sample PipelinePolicy CR
+
 ## Build and Test
 
 ```bash
-# Build
-go build -o pipeline-policy .
-
-# Test
-go test ./...
+make build       # generate deepcopy + build binary
+make manifests   # generate CRD YAML
+make test        # run tests
 ```
+
+## Deployment
+
+The extension image is pushed to `quay.io/acristur/pipeline-policy`. To deploy:
+1. Install CRD: `kubectl apply -f config/crd/bases/`
+2. Install RBAC: `kubectl apply -f config/rbac/`
+3. Mount the binary into the kuadrant-operator pod at `/extensions/pipeline-policy/pipeline-policy`
+4. The operator discovers and starts it automatically
