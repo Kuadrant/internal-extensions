@@ -1,45 +1,42 @@
-# PipelinePolicy
+# Internal Extensions
 
-A standalone [Kuadrant](https://kuadrant.io) extension that provides a **PipelinePolicy** CRD. Unlike the built-in extensions that hardcode specific actions, PipelinePolicy is generic: its spec declaratively defines the full action pipeline — gRPC upstreams, request-phase actions, and response-phase actions. Different scenarios are different YAML manifests, no code changes needed.
+A collection of internal/test [Kuadrant](https://kuadrant.io) extensions built using the [kuadrant-operator extension SDK](https://github.com/Kuadrant/kuadrant-operator/tree/main/pkg/extension).
 
-Built using the [kuadrant-operator extension SDK](https://github.com/Kuadrant/kuadrant-operator/tree/main/pkg/extension).
+## Extensions
 
-## CRD Spec
-
-| Field | Description |
-|-------|-------------|
-| `targetRef` | Gateway API resource (HTTPRoute or Gateway) |
-| `actionMethods[]` | gRPC upstreams to register (name, url, service, method, messageTemplate) |
-| `request[]` | Ordered request-phase actions — `allow` or `grpc_method` |
-| `response[]` | Ordered response-phase actions — `add_headers` or `with_response_code` |
-
-See [examples/policy.yml](examples/policy.yml) for a full example.
+| Extension | Description |
+|-----------|-------------|
+| [pipeline-policy](extensions/pipeline-policy/) | Generic PipelinePolicy CRD that declaratively defines action pipelines |
 
 ## Build
 
 ```bash
-make build       # generate deepcopy + build binary
-make manifests   # generate CRD YAML
-make test        # run tests
+make build       # generate deepcopy + build all extensions
+make manifests   # generate CRD YAMLs
+make test        # run all tests
 ```
 
 ## Deploy
 
 ```bash
-# 1. Build and push the image
-docker build . -t <registry>/pipeline-policy:latest
-docker push <registry>/pipeline-policy:latest
+# 1. Build and push the image (contains all extension binaries)
+docker build . -t quay.io/acristur/internal-extensions:latest
+docker push quay.io/acristur/internal-extensions:latest
 
-# 2. Install the CRD and RBAC
+# 2. Install CRDs and RBAC
 kubectl apply -f config/crd/bases/
 kubectl apply -f config/rbac/
 
-# 3. Mount the binary into the kuadrant-operator
-#    Add an init container to the operator deployment that copies the binary
-#    into a shared volume at /extensions/pipeline-policy/pipeline-policy
+# 3. Mount the binaries into the kuadrant-operator
+#    The image places each extension at /extensions/<name>/<name>
+#    The operator's extension manager discovers and starts them automatically
 
-# 4. Create a PipelinePolicy
+# 4. Create a policy
 kubectl apply -f examples/policy.yml
 ```
 
-The operator's extension manager discovers the binary at `/extensions/pipeline-policy/pipeline-policy` and starts it as a child process.
+## Adding a New Extension
+
+1. Create `extensions/<name>/` with `main.go`, `api/`, and `internal/controller/`
+2. Follow the same patterns as `extensions/pipeline-policy/`
+3. Run `make build` — it auto-discovers and builds all extensions

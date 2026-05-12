@@ -15,10 +15,10 @@ jobs:
           go-version-file: go.mod
 
       - name: Build
-        run: go build -o pipeline-policy .
+        run: make build
 
       - name: Test
-        run: go test ./...
+        run: make test
 
   image:
     runs-on: ubuntu-latest
@@ -39,4 +39,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: quay.io/acristur/pipeline-policy:latest
+          tags: quay.io/acristur/internal-extensions:latest

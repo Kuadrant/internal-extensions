@@ -5,15 +5,22 @@ WORKDIR /workspace
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY main.go main.go
-COPY api/ api/
-COPY internal/ internal/
+COPY extensions/ extensions/
 
 ARG TARGETARCH
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o pipeline-policy .
+RUN for ext in extensions/*/; do \
+        name=$(basename "$ext"); \
+        echo "Building $name ..."; \
+        CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o "bin/$name" "./extensions/$name"; \
+    done
 
 FROM registry.access.redhat.com/ubi9-minimal:latest
 WORKDIR /
-COPY --from=builder /workspace/pipeline-policy /extensions/pipeline-policy/pipeline-policy
+COPY --from=builder /workspace/bin/ /tmp/bins/
+RUN for bin in /tmp/bins/*; do \
+        name=$(basename "$bin"); \
+        mkdir -p "/extensions/$name"; \
+        cp "$bin" "/extensions/$name/$name"; \
+    done && rm -rf /tmp/bins
 USER 65532:65532

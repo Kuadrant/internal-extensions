@@ -7,8 +7,8 @@ import (
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/crstrn13/pipeline-policy/api/v1alpha1"
-	"github.com/crstrn13/pipeline-policy/internal/controller"
+	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/api/v1alpha1"
+	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/internal/controller"
 	extcontroller "github.com/kuadrant/kuadrant-operator/pkg/extension/controller"
 )
 

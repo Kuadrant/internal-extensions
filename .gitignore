@@ -24,8 +24,8 @@ profile.cov
 go.work
 go.work.sum
 
-# Built binary
-pipeline-policy
+# Built binaries
+bin/
 
 # env file
 .env

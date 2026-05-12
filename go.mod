@@ -1,15 +1,4 @@
-
-
-
-
-
-
-
-
-
-
-
-module github.com/crstrn13/pipeline-policy
+module github.com/crstrn13/internal-extensions
 
 go 1.25.9
 
