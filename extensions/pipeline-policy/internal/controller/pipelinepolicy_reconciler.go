@@ -80,42 +80,20 @@ func (r *PipelinePolicyReconciler) reconcileSpec(ctx context.Context, pol *v1alp
 
 	pipeline := kuadrantCtx.NewPipeline(pol)
 
-	for _, req := range pol.Spec.Request {
-		switch req.Type {
-		case v1alpha1.RequestActionTypeAllow:
-			pipeline.OnRequest(types.AllowAction{
-				Predicate: req.Predicate,
-				Intention: req.Intention,
-			})
-		case v1alpha1.RequestActionTypeGRPCMethod:
-			pipeline.OnRequest(types.GRPCMethodAction{
-				Predicate: req.Predicate,
-				Intention: req.Intention,
-				Method:    req.Method,
-				Var:       req.Var,
-			})
-		default:
-			err := fmt.Errorf("unknown request action type: %s", req.Type)
-			return calculateErrorStatus(pol, err), err
-		}
+	requestActions, err := buildActions(pol.Spec.Request)
+	if err != nil {
+		return calculateErrorStatus(pol, err), err
+	}
+	if err := pipeline.OnHTTPRequest(requestActions...); err != nil {
+		return calculateErrorStatus(pol, err), err
 	}
 
-	for _, resp := range pol.Spec.Response {
-		switch resp.Type {
-		case v1alpha1.ResponseActionTypeAddHeaders:
-			pipeline.OnResponse(types.AddHeadersAction{
-				Predicate:    resp.Predicate,
-				HeadersToAdd: resp.HeadersToAdd,
-			})
-		case v1alpha1.ResponseActionTypeWithResponseCode:
-			pipeline.OnResponse(types.WithResponseCodeAction{
-				Predicate:       resp.Predicate,
-				NewResponseCode: resp.ResponseCode,
-			})
-		default:
-			err := fmt.Errorf("unknown response action type: %s", resp.Type)
-			return calculateErrorStatus(pol, err), err
-		}
+	responseActions, err := buildActions(pol.Spec.Response)
+	if err != nil {
+		return calculateErrorStatus(pol, err), err
+	}
+	if err := pipeline.OnHTTPResponse(responseActions...); err != nil {
+		return calculateErrorStatus(pol, err), err
 	}
 
 	if err := pipeline.Commit(ctx); err != nil {
@@ -168,4 +146,38 @@ func calculateEnforcedStatus(pol *v1alpha1.PipelinePolicy, enforcedErr error) *v
 	meta.SetStatusCondition(&newStatus.Conditions, *extcontroller.AcceptedCondition(pol, nil))
 	meta.SetStatusCondition(&newStatus.Conditions, *extcontroller.EnforcedCondition(pol, enforcedErr, true))
 	return newStatus
+}
+
+func buildActions(specs []v1alpha1.ActionSpec) ([]types.Action, error) {
+	actions := make([]types.Action, 0, len(specs))
+	for _, spec := range specs {
+		switch spec.Type {
+		case v1alpha1.ActionTypeGRPCMethod:
+			actions = append(actions, types.GRPCMethodAction{
+				Predicate: spec.Predicate,
+				Method:    spec.Method,
+				Var:       spec.Var,
+			})
+		case v1alpha1.ActionTypeDeny:
+			actions = append(actions, types.DenyAction{
+				Predicate:   spec.Predicate,
+				WithStatus:  spec.WithStatus,
+				WithHeaders: spec.WithHeaders,
+				WithBody:    spec.WithBody,
+			})
+		case v1alpha1.ActionTypeFail:
+			actions = append(actions, types.FailAction{
+				Predicate:  spec.Predicate,
+				LogMessage: spec.LogMessage,
+			})
+		case v1alpha1.ActionTypeAddHeaders:
+			actions = append(actions, types.AddHeadersAction{
+				Predicate:    spec.Predicate,
+				HeadersToAdd: spec.HeadersToAdd,
+			})
+		default:
+			return nil, fmt.Errorf("unknown action type: %s", spec.Type)
+		}
+	}
+	return actions, nil
 }

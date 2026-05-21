@@ -5,7 +5,7 @@ go 1.25.9
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/google/go-cmp v0.7.0
-	github.com/kuadrant/kuadrant-operator v0.0.0-20260511090927-626843091245
+	github.com/kuadrant/kuadrant-operator v0.1.1-0.20260521094543-54c86a278ad7
 	k8s.io/apimachinery v0.33.3
 	sigs.k8s.io/controller-runtime v0.21.0
 	sigs.k8s.io/gateway-api v1.2.1
