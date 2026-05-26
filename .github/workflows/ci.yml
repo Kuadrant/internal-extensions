@@ -39,4 +39,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: quay.io/acristur/internal-extensions:latest
+          tags: quay.io/kuadrant/internal-extensions:latest
