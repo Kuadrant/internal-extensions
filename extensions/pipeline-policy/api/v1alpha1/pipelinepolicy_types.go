@@ -29,10 +29,10 @@ type PipelinePolicySpec struct {
 	ActionMethods []ActionMethodSpec `json:"actionMethods,omitempty"`
 
 	// +optional
-	Request []RequestActionSpec `json:"request,omitempty"`
+	Request []ActionSpec `json:"request,omitempty"`
 
 	// +optional
-	Response []ResponseActionSpec `json:"response,omitempty"`
+	Response []ActionSpec `json:"response,omitempty"`
 }
 
 type ActionMethodSpec struct {
@@ -43,49 +43,42 @@ type ActionMethodSpec struct {
 	MessageTemplate string `json:"messageTemplate"`
 }
 
-// +kubebuilder:validation:Enum=allow;grpc_method
-type RequestActionType string
+// +kubebuilder:validation:Enum=grpc_method;deny;fail;add_headers
+type ActionType string
 
 const (
-	RequestActionTypeAllow      RequestActionType = "allow"
-	RequestActionTypeGRPCMethod RequestActionType = "grpc_method"
+	ActionTypeGRPCMethod ActionType = "grpc_method"
+	ActionTypeDeny       ActionType = "deny"
+	ActionTypeFail       ActionType = "fail"
+	ActionTypeAddHeaders ActionType = "add_headers"
 )
 
-type RequestActionSpec struct {
-	Type RequestActionType `json:"type"`
+type ActionSpec struct {
+	Type ActionType `json:"type"`
 
 	// +optional
 	Predicate string `json:"predicate,omitempty"`
-
-	// +optional
-	Intention string `json:"intention,omitempty"`
 
 	// +optional
 	Method string `json:"method,omitempty"`
 
 	// +optional
 	Var string `json:"var,omitempty"`
-}
-
-// +kubebuilder:validation:Enum=add_headers;with_response_code
-type ResponseActionType string
-
-const (
-	ResponseActionTypeAddHeaders       ResponseActionType = "add_headers"
-	ResponseActionTypeWithResponseCode ResponseActionType = "with_response_code"
-)
-
-type ResponseActionSpec struct {
-	Type ResponseActionType `json:"type"`
 
 	// +optional
-	Predicate string `json:"predicate,omitempty"`
+	WithStatus int `json:"withStatus,omitempty"`
+
+	// +optional
+	WithHeaders string `json:"withHeaders,omitempty"`
+
+	// +optional
+	WithBody string `json:"withBody,omitempty"`
 
 	// +optional
 	HeadersToAdd string `json:"headersToAdd,omitempty"`
 
 	// +optional
-	ResponseCode int `json:"responseCode,omitempty"`
+	LogMessage string `json:"logMessage,omitempty"`
 }
 
 func (p *PipelinePolicy) GetName() string {
