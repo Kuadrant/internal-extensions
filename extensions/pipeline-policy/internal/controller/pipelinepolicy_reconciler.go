@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"slices"
-	"strings"
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
@@ -80,10 +79,6 @@ func (r *PipelinePolicyReconciler) reconcileSpec(ctx context.Context, pol *v1alp
 	}
 
 	pipeline := kuadrantCtx.NewPipeline(pol)
-
-	if err := validateFailActions(slices.Concat(pol.Spec.Request, pol.Spec.Response)); err != nil {
-		return calculateErrorStatus(pol, err), err
-	}
 
 	requestActions, err := buildActions(pol.Spec.Request)
 	if err != nil {
@@ -185,31 +180,4 @@ func buildActions(specs []v1alpha1.ActionSpec) ([]types.Action, error) {
 		}
 	}
 	return actions, nil
-}
-
-// validateFailActions checks that there are no top-level fail actions, because they will not work anyway.
-func validateFailActions(specs []v1alpha1.ActionSpec) error {
-	grpcVars := make([]string, 0)
-	for _, spec := range specs {
-		if spec.Var != "" {
-			grpcVars = append(grpcVars, spec.Var)
-		}
-	}
-
-	for _, spec := range specs {
-		if spec.Type == v1alpha1.ActionTypeFail {
-			flag := false
-			for _, grpcVar := range grpcVars {
-				if strings.Contains(spec.Predicate, grpcVar) || strings.Contains(spec.LogMessage, grpcVar) {
-					flag = true
-					break
-				}
-			}
-			if !flag {
-				return fmt.Errorf("top-level %s action types are not allowed", spec.Type)
-			}
-		}
-	}
-
-	return nil
 }
