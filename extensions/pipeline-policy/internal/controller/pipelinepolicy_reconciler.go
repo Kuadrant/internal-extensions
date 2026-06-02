@@ -7,8 +7,11 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/meta"
+	k8stypes "k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/api/v1alpha1"
 	extcontroller "github.com/kuadrant/kuadrant-operator/pkg/extension/controller"
@@ -63,7 +66,38 @@ func (r *PipelinePolicyReconciler) Reconcile(ctx context.Context, request reconc
 	return reconcile.Result{}, nil
 }
 
+func (r *PipelinePolicyReconciler) validateTarget(ctx context.Context, pol *v1alpha1.PipelinePolicy) error {
+	ref := pol.Spec.TargetRef
+
+	if ref.Group != gwapiv1.GroupName {
+		return fmt.Errorf("unsupported targetRef group: %s (expected %s)", ref.Group, gwapiv1.GroupName)
+	}
+
+	var obj client.Object
+	switch ref.Kind {
+	case "Gateway":
+		obj = &gwapiv1.Gateway{}
+	case "HTTPRoute":
+		obj = &gwapiv1.HTTPRoute{}
+	default:
+		return fmt.Errorf("unsupported targetRef kind: %s", ref.Kind)
+	}
+
+	nn := k8stypes.NamespacedName{Name: string(ref.Name), Namespace: pol.Namespace}
+	if err := r.Client.Get(ctx, nn, obj); err != nil {
+		if errors.IsNotFound(err) {
+			return fmt.Errorf("targetRef %s %s/%s not found", ref.Kind, nn.Namespace, nn.Name)
+		}
+		return err
+	}
+	return nil
+}
+
 func (r *PipelinePolicyReconciler) reconcileSpec(ctx context.Context, pol *v1alpha1.PipelinePolicy, kuadrantCtx types.KuadrantCtx) (*v1alpha1.PipelinePolicyStatus, error) {
+	if err := r.validateTarget(ctx, pol); err != nil {
+		return calculateErrorStatus(pol, err), err
+	}
+
 	for _, am := range pol.Spec.ActionMethods {
 		r.Logger.Info("registering action method", "name", am.Name, "url", am.URL)
 		if err := kuadrantCtx.RegisterActionMethod(ctx, pol, types.ActionMethodConfig{
