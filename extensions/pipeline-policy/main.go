@@ -6,6 +6,7 @@ import (
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
+	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
 	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/api/v1alpha1"
 	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/internal/controller"
@@ -16,6 +17,7 @@ var scheme = k8sruntime.NewScheme()
 
 func init() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme))
+	utilruntime.Must(gwapiv1.Install(scheme))
 }
 
 func main() {
