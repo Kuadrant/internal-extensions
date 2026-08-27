@@ -9,5 +9,5 @@ roleRef:
   name: pipeline-policy-manager-role
 subjects:
 - kind: ServiceAccount
-  name: kuadrant-operator-controller-manager
-  namespace: kuadrant-system
+  name: pipeline-policy-extension
+  namespace: kuadrant-extensions

@@ -13,7 +13,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	gwapiv1 "sigs.k8s.io/gateway-api/apis/v1"
 
-	"github.com/crstrn13/internal-extensions/extensions/pipeline-policy/api/v1alpha1"
+	"github.com/Kuadrant/internal-extensions/extensions/pipeline-policy/api/v1alpha1"
 	extcontroller "github.com/kuadrant/kuadrant-operator/pkg/extension/controller"
 	"github.com/kuadrant/kuadrant-operator/pkg/extension/types"
 )
