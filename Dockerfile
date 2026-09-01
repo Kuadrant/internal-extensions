@@ -1,31 +1,26 @@
-FROM quay.io/kuadrant/kuadrant-operator:latest AS operator
-
-FROM --platform=$BUILDPLATFORM golang:1.25 AS builder
+# Builds an image containing only the pipeline-policy binary, for deployment
+# as its own pod (see config/deploy/). The extension connects to the
+# kuadrant-operator over TCP, so this doesn't need anything from the
+# operator image itself.
+FROM --platform=$BUILDPLATFORM golang:1.26 AS builder
 
 WORKDIR /workspace
 
 COPY go.mod go.sum ./
 RUN go mod download
 
-COPY extensions/ extensions/
+COPY extensions/pipeline-policy/ extensions/pipeline-policy/
 
 ARG TARGETARCH
 
-RUN for ext in extensions/*/; do \
-        name=$(basename "$ext"); \
-        echo "Building $name ..."; \
-        CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o "bin/$name" "./extensions/$name"; \
-    done
+RUN mkdir -p /workspace/bin && \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} go build -a -o /workspace/bin/pipeline-policy ./extensions/pipeline-policy
 
 FROM registry.access.redhat.com/ubi9-minimal:latest
 WORKDIR /
 
-COPY --from=operator /extensions/ /extensions/
+COPY --from=builder /workspace/bin/pipeline-policy /pipeline-policy
 
-COPY --from=builder /workspace/bin/ /tmp/bins/
-RUN for bin in /tmp/bins/*; do \
-        name=$(basename "$bin"); \
-        mkdir -p "/extensions/$name"; \
-        cp "$bin" "/extensions/$name/$name"; \
-    done && rm -rf /tmp/bins
 USER 65532:65532
+
+ENTRYPOINT ["/pipeline-policy"]

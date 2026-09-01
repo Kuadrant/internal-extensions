@@ -1,17 +1,16 @@
 ## Project Overview
 
-This is a collection of internal/test Kuadrant extensions that dogfood the kuadrant-operator extension SDK (`pkg/extension/`). Each extension lives under `extensions/<name>/` and is built into a single container image.
+This repo hosts a single internal/test Kuadrant extension, pipeline-policy, that dogfoods the kuadrant-operator extension SDK (`pkg/extension/`). It lives under `extensions/pipeline-policy/`, built into its own container image and deployed as its own pod.
 
 ## How Kuadrant Extensions Work
 
-Extensions are separate Go binaries that communicate with the kuadrant-operator via gRPC over Unix domain sockets.
+Extensions are separate Go binaries, deployed as their own pods, that communicate with the kuadrant-operator via gRPC over TCP.
 
-**Mounting into the operator:**
-1. Build static Go binaries (one per extension)
-2. Place each at `/extensions/<name>/<name>` in the operator container
-3. On startup, the operator's extension manager scans `/extensions/`, discovers executables matching the `<dir>/<dir>` naming convention
-4. The manager starts each extension as a child process, passing a Unix socket path as the first CLI argument
-5. The extension connects back to the operator over that socket for CEL evaluation, data bindings, upstream registration, and pipeline commits
+**Deployment:**
+1. Build a static Go binary for the extension
+2. Deploy it as its own pod with `KUADRANT_EXTENSION_ADDRESS` (pointing at the operator's `kuadrant-operator-extensions` Service on port 50052) and `KUADRANT_EXTENSION_TOKEN_FILE` (path to a projected ServiceAccount token) env vars
+3. The extension authenticates to the operator using a projected SA token (audience `kuadrant-extensions`); the operator validates it via TokenReview and checks RBAC for the `register` verb on the `policyregistrations` virtual resource
+4. The extension connects to the operator over that address for CEL evaluation, data bindings, upstream registration, and pipeline commits
 
 **SDK package:** `github.com/kuadrant/kuadrant-operator/pkg/extension/`
 - `pkg/extension/controller` — controller builder (`NewBuilder()`)
@@ -30,14 +29,14 @@ extensions/
     api/v1alpha1/          # CRD types, deepcopy, scheme registration
     internal/controller/   # Reconciler
 config/
+  namespace.yaml           # Shared namespace (prerequisite for RBAC and deploy)
   crd/bases/               # Generated CRD YAMLs (make manifests)
-  rbac/                    # ClusterRole and ClusterRoleBinding
+  rbac/                    # ClusterRole, ClusterRoleBinding, and the extension's own ServiceAccount
+  deploy/                  # Deployment for running the extension as its own pod
 examples/                  # Sample CRs
 ```
 
-## Extensions
-
-### pipeline-policy
+## pipeline-policy
 
 A generic extension whose spec declaratively defines a full action pipeline — gRPC upstreams, request-phase actions (allow, grpc_method), and response-phase actions (add_headers, with_response_code). The reconciler reads the spec and translates it into SDK calls. No business logic — different scenarios are different YAML manifests.
 
@@ -50,22 +49,30 @@ A generic extension whose spec declaratively defines a full action pipeline — 
 ## Build and Test
 
 ```bash
-make build       # generate deepcopy + build all extensions to bin/
-make manifests   # generate CRD YAMLs
+make build       # generate deepcopy + build the binary to bin/
+make manifests   # generate the CRD YAML
 make test        # run all tests
 ```
 
-## Adding a New Extension
-
-1. Create `extensions/<name>/` with `main.go`, `api/`, `internal/controller/`
-2. Import paths use `github.com/crstrn13/internal-extensions/extensions/<name>/...`
-3. Run `make build` — auto-discovers all extensions under `extensions/`
-4. Run `make manifests` — generates CRDs for all extensions
-
 ## Deployment
 
-The image is pushed to `quay.io/acristur/internal-extensions`. To deploy:
-1. Install CRDs: `kubectl apply -f config/crd/bases/`
-2. Install RBAC: `kubectl apply -f config/rbac/`
-3. Mount the image's `/extensions/` directory into the kuadrant-operator pod
-4. The operator discovers and starts all extensions automatically
+The extension runs as its own pod, authenticating to the kuadrant-operator
+via a projected ServiceAccount token (audience `kuadrant-extensions`). The
+operator validates the token via TokenReview and authorizes the extension
+through RBAC on the `policyregistrations` virtual resource.
+
+1. Build and push the image: `make docker-build` and `make docker-push`
+2. Install CRDs and the namespace: `kubectl apply -f config/crd/bases/` and
+   `kubectl apply -f config/namespace.yaml` — the namespace must exist
+   first since `config/rbac/serviceaccount.yaml` targets it
+3. Install RBAC: `kubectl apply -f config/rbac/` (ClusterRole, ClusterRoleBinding,
+   and ServiceAccount)
+4. Deploy the extension: `kubectl apply -k config/deploy/` (Namespace, Deployment)
+
+Files:
+- `Dockerfile` — builds only the pipeline-policy binary (doesn't rely on the
+  operator image or a shared `/extensions` filesystem convention)
+- `config/deploy/` — Namespace and Deployment for running the extension
+  as its own pod
+- `config/rbac/` — ClusterRole (including `register` verb on `policyregistrations`
+  for `PipelinePolicy`), ClusterRoleBinding, and ServiceAccount
