@@ -43,7 +43,7 @@ type ActionMethodSpec struct {
 	MessageTemplate string `json:"messageTemplate"`
 }
 
-// +kubebuilder:validation:Enum=grpc_method;deny;fail;add_headers
+// +kubebuilder:validation:Enum=grpc_method;deny;fail;add_headers;store
 type ActionType string
 
 const (
@@ -51,6 +51,7 @@ const (
 	ActionTypeDeny       ActionType = "deny"
 	ActionTypeFail       ActionType = "fail"
 	ActionTypeAddHeaders ActionType = "add_headers"
+	ActionTypeStore      ActionType = "store"
 )
 
 type ActionSpec struct {
@@ -79,6 +80,15 @@ type ActionSpec struct {
 
 	// +optional
 	LogMessage string `json:"logMessage,omitempty"`
+
+	// +optional
+	Path string `json:"path,omitempty"`
+
+	// +optional
+	Value string `json:"value,omitempty"`
+
+	// +optional
+	ExportToHost bool `json:"exportToHost,omitempty"`
 }
 
 func (p *PipelinePolicy) GetName() string {

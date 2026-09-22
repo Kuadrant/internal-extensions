@@ -61,11 +61,15 @@ spec:
               request:
                 items:
                   properties:
+                    exportToHost:
+                      type: boolean
                     headersToAdd:
                       type: string
                     logMessage:
                       type: string
                     method:
+                      type: string
+                    path:
                       type: string
                     predicate:
                       type: string
@@ -75,6 +79,9 @@ spec:
                       - deny
                       - fail
                       - add_headers
+                      - store
+                      type: string
+                    value:
                       type: string
                     var:
                       type: string
@@ -91,11 +98,15 @@ spec:
               response:
                 items:
                   properties:
+                    exportToHost:
+                      type: boolean
                     headersToAdd:
                       type: string
                     logMessage:
                       type: string
                     method:
+                      type: string
+                    path:
                       type: string
                     predicate:
                       type: string
@@ -105,6 +116,9 @@ spec:
                       - deny
                       - fail
                       - add_headers
+                      - store
+                      type: string
+                    value:
                       type: string
                     var:
                       type: string
