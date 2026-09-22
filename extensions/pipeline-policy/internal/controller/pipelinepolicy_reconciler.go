@@ -187,7 +187,7 @@ func buildActions(specs []v1alpha1.ActionSpec) ([]types.Action, error) {
 	for _, spec := range specs {
 		switch spec.Type {
 		case v1alpha1.ActionTypeGRPCMethod:
-			actions = append(actions, types.GRPCMethodAction{
+			actions = append(actions, types.GRPCAction{
 				Predicate: spec.Predicate,
 				Method:    spec.Method,
 				Var:       spec.Var,
@@ -208,6 +208,13 @@ func buildActions(specs []v1alpha1.ActionSpec) ([]types.Action, error) {
 			actions = append(actions, types.AddHeadersAction{
 				Predicate:    spec.Predicate,
 				HeadersToAdd: spec.HeadersToAdd,
+			})
+		case v1alpha1.ActionTypeStore:
+			actions = append(actions, types.StoreAction{
+				Predicate:    spec.Predicate,
+				Path:         spec.Path,
+				Value:        spec.Value,
+				ExportToHost: spec.ExportToHost,
 			})
 		default:
 			return nil, fmt.Errorf("unknown action type: %s", spec.Type)
