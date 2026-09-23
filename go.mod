@@ -5,15 +5,16 @@ go 1.26.7
 require (
 	github.com/go-logr/logr v1.4.4
 	github.com/google/go-cmp v0.7.0
-	github.com/kuadrant/kuadrant-operator v0.1.1-0.20260921144341-641c5fd26a94
-	k8s.io/apimachinery v0.35.3
+	github.com/kuadrant/kuadrant-operator v0.1.1-0.20260923143344-61b63bf38708
+	k8s.io/apimachinery v0.35.8
 	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/gateway-api v1.2.1
 )
 
 require (
 	cel.dev/expr v0.25.2 // indirect
-	github.com/antlr4-go/antlr/v4 v4.13.0 // indirect
+	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/antlr4-go/antlr/v4 v4.13.1 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cert-manager/cert-manager v1.16.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
@@ -40,7 +41,7 @@ require (
 	github.com/go-openapi/swag/yamlutils v0.28.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/btree v1.1.3 // indirect
-	github.com/google/cel-go v0.26.0 // indirect
+	github.com/google/cel-go v0.29.0 // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -56,7 +57,6 @@ require (
 	github.com/prometheus/procfs v0.21.1 // indirect
 	github.com/samber/lo v1.47.0 // indirect
 	github.com/spf13/pflag v1.0.10 // indirect
-	github.com/stoewer/go-strcase v1.3.0 // indirect
 	github.com/telepresenceio/watchable v0.0.0-20220726211108-9bb86f92afa7 // indirect
 	github.com/x448/float16 v0.8.4 // indirect
 	go.opentelemetry.io/otel v1.46.0 // indirect
@@ -80,9 +80,9 @@ require (
 	google.golang.org/protobuf v1.36.12 // indirect
 	gopkg.in/evanphx/json-patch.v4 v4.13.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	k8s.io/api v0.35.3 // indirect
-	k8s.io/apiextensions-apiserver v0.35.3 // indirect
-	k8s.io/client-go v0.35.3 // indirect
+	k8s.io/api v0.35.8 // indirect
+	k8s.io/apiextensions-apiserver v0.35.8 // indirect
+	k8s.io/client-go v0.35.8 // indirect
 	k8s.io/klog/v2 v2.140.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20260319004828-5883c5ee87b9 // indirect
 	k8s.io/utils v0.0.0-20260319190234-28399d86e0b5 // indirect
